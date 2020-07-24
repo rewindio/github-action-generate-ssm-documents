@@ -1,2 +1,3 @@
 tempFiles
 .DS_Store
+entrypoint copy.sh
