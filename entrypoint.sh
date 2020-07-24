@@ -91,87 +91,11 @@ create_ssm_documents(){
   if [ $DEBUG == True ]; then echo "Full Path: $filePath/$fileName"; fi
 
   # create the ssm document for each file given
-  echo '{
-  "schemaVersion": "2.2",
-  "description": "Run Github script",
-  "parameters": {
-    "githubTokenLocation": {
-      "type": "String",
-      "description": "Location in ssm param store of your github token",
-      "default": "none"
-    },
-    "workingDirectory": {
-      "type": "String",
-      "default": "",
-      "description": "(Optional) The path where the content will be downloaded and executed from on your instance.",
-      "maxChars": 4096
-    },
-    "executionTimeout": {
-      "description": "(Optional) The time in seconds for a command to complete before it is considered to have failed. Default is 3600 (1 hour). Maximum is 28800 (8 hours).",
-      "type": "String",
-      "default": "3600",
-      "allowedPattern": "([1-9][0-9]{0,3})|(1[0-9]{1,4})|(2[0-7][0-9]{1,3})|(28[0-7][0-9]{1,2})|(28800)"
-    }
-  },
-  "mainSteps": [
-    {
-      "action": "aws:downloadContent",
-      "name": "downloadContent",
-      "inputs": {
-        "sourceType": "GitHub",
-        "sourceInfo": "{{ [\"{\"owner\":\"'$REPO_OWNER'\", \"repository\": \"'$REPO_NAME'\", \"path\": \"'$filePath'/\", \"tokenInfo\":\"{{ssm-secure:{{githubTokenLocation}}}}\" }\"],\"commandLine\":[\"'$fileName'\"] }}",
-        "destinationPath": "{{ workingDirectory }}"
-      }
-    },
-    {
-      "precondition": {
-        "StringEquals": [
-          "platformType",
-          "Windows"
-        ]
-      },
-      "action": "aws:runPowerShellScript",
-      "name": "runPowerShellScript",
-      "inputs": {
-        "runCommand": [
-          "",
-          "$directory = Convert-Path .",
-          "$env:PATH += \";$directory\"",
-          " [\"$file\"] ",
-          "if ($?) {",
-          "    exit $LASTEXITCODE",
-          "} else {",
-          "    exit 255",
-          "}",
-          ""
-        ],
-        "workingDirectory": "{{ workingDirectory }}",
-        "timeoutSeconds": "{{ executionTimeout }}"
-      }
-    },
-    {
-      "precondition": {
-        "StringEquals": [
-          "platformType",
-          "Linux"
-        ]
-      },
-      "action": "aws:runShellScript",
-      "name": "runShellScript",
-      "inputs": {
-        "runCommand": [
-          "",
-          "directory=$(pwd)",
-          "export PATH=$PATH:$directory",
-          " [\"$file\"] ",
-          ""
-        ],
-        "workingDirectory": "{{ workingDirectory }}",
-        "timeoutSeconds": "{{ executionTimeout }}"
-      }
-    }
-  ]
-}' > tempFiles/$(echo $fileName | cut -f 1 -d '.').json
+  cat base_doc.yml | sed 's|$REPO_OWNER|'"${REPO_OWNER}|g" | \
+  sed 's|$REPO_NAME|'"${REPO_NAME}|g" | \
+  sed 's|$PREFIX_FILTER|'"${PREFIX_FILTER}|g" | \
+  sed 's|$fileName|'"${fileName}|g" \
+  > tempFiles/$(echo $fileName | cut -f 1 -d '.').yml
   done
 
 }
@@ -212,7 +136,11 @@ upload_ssm_documents(){
       filePath=$(echo $filePath | tr / -)
       if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath-$file"; fi
 
-      aws ssm create-document --content file://tempFiles/$file.json --name "$filePath-$file" --document-type "Command" --profile ${PROFILE_NAME} --region ${region}
+      aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
+      --document-type "Command" \
+      --profile ${PROFILE_NAME} \
+      --region ${region} \
+      --document-format YAML
 
     done
   done
