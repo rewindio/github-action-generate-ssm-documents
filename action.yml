@@ -1,0 +1,9 @@
+name: "generate_ssm_document"
+description: "generates an ssm document"
+author: harrisonhammond
+runs:
+  using: docker
+  image: Dockerfile
+branding:
+  icon: upload-cloud
+  color: purple
