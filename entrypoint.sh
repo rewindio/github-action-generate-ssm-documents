@@ -97,6 +97,7 @@ create_ssm_documents(){
   sed 's|$REPO_NAME|'"${REPO_NAME}|g" | \
   sed 's|$PREFIX_FILTER|'"${PREFIX_FILTER}|g" | \
   sed 's|$fileName|'"${fileName}|g" \
+  sed 's|$filePath|'"${filePath}|g" \
   > tempFiles/$(echo $fileName | cut -f 1 -d '.').yml
   done
 
