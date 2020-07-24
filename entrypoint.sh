@@ -7,7 +7,7 @@ TEXT_COLOUR_GREEN="\e[38;5;2m"
 TEXT_COLOUR_ORANGE="\e[38;5;202m"
 TEXT_COLOUR_CLEAR="\033[0m"
 
-pwd
+if [ $DEBUG == True ]; then pwd; ls; fi
 
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
   echo "AWS_ACCESS_KEY_ID is not set. Quitting."
