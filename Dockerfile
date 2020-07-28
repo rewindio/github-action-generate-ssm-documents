@@ -1,6 +1,9 @@
-FROM python:3.8-alpine
+FROM ruby:2.6.6-alpine3.10
 
-RUN apk update && apk add jq bash
+RUN apk update && apk add jq bash build-base nodejs python3 py3-pip
+
+RUN gem install bundler
+RUN gem install rails
 
 LABEL "com.github.actions.name"="generate_ssm_document"
 LABEL "com.github.actions.description"="generates an ssm document"
@@ -15,7 +18,7 @@ LABEL maintainer="Harrison Hammond <harrison@rewind.io>"
 # https://github.com/aws/aws-cli/blob/master/CHANGELOG.rst
 ENV AWSCLI_VERSION='1.18.2'
 
-RUN pip install --quiet --no-cache-dir awscli==${AWSCLI_VERSION}
+RUN pip3 install --quiet --no-cache-dir awscli==${AWSCLI_VERSION}
 
 ADD entrypoint.sh /entrypoint.sh
 RUN chmod a+x /entrypoint.sh

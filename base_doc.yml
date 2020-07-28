@@ -38,11 +38,13 @@
     name: "runShellScript"
     inputs:
       runCommand:
-      - if [[ "default-hello-world.sh" == *".rails."* ]]
+      - if [[ "$fileName" == *".rails."* ]]
       - then
-      - "cd /var/app/current; sudo rails r default-hello-world.sh {{ parameters }}"
+      - "echo running rails script..."
+      - "cd /var/app/current; sudo rails r $fileName {{ parameters }}"
       - else
-      - "./default-hello-world.sh {{ parameters }}"
+      - "echo running script..."
+      - "$fileName {{ parameters }}"
       - fi
       workingDirectory: "{{ workingDirectory }}"
       timeoutSeconds: "{{ executionTimeout }}"
