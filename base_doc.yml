@@ -28,7 +28,7 @@
     name: "downloadContent"
     inputs:
       sourceType: "GitHub"
-      sourceInfo: "{\"owner\":\"$REPO_OWNER\", \"repository\":\"$REPO_NAME\",\"branch\": \"main\",\"path\" :\"$filePath/\", \"tokenInfo\":\"{{ ssm-secure:{{githubTokenLocation}} }}\"}"
+      sourceInfo: "{\"owner\":\"$REPO_OWNER\", \"repository\":\"$REPO_NAME\",\"getOptions\" : \"branch:main\",\"path\" :\"$filePath/\", \"tokenInfo\":\"{{ ssm-secure:{{githubTokenLocation}} }}\"}"
       destinationPath: "{{ workingDirectory }}"
   - precondition:
       StringEquals:
@@ -40,11 +40,9 @@
       runCommand:
       - if [[ "$fileName" == *".rails."* ]]
       - then
-      - "echo running rails script..."
-      - "cd /var/app/current; sudo rails r $fileName {{ parameters }}"
+      - "cd /var/app/current; sudo rails r $fileName {{parameters}}"
       - else
-      - "echo running script..."
-      - "$fileName {{ parameters }}"
+      - "./$fileName {{parameters}}"
       - fi
       workingDirectory: "{{ workingDirectory }}"
       timeoutSeconds: "{{ executionTimeout }}"

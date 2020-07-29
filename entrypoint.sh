@@ -199,5 +199,5 @@ printf "Uploading ssm documents to ssm document manager..."
 upload_ssm_documents
 printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
 printf "Removing temp files..."
-# remove_temp_files
+remove_temp_files
 printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
