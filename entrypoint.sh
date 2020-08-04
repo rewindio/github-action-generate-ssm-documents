@@ -134,11 +134,11 @@ upload_ssm_documents(){
 
       if [ $DEBUG == True ]; then echo "File: $file"; fi
 
-      filePath=$(echo $file | tr / -) # the path to the document with the / replaced with -
 
       file=${file##*/}
       file=${file%\"}
       file=${file#\"}
+      filePath=$(echo $file | tr / -) # the path to the document with the / replaced with -
       file=$(echo $file | cut -f 1 -d '.')
 
       if [ $DEBUG == True ]; then echo "File Path: $filePath"; fi
