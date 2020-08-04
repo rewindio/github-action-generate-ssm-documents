@@ -98,7 +98,7 @@ create_ssm_documents(){
   sed 's|$PREFIX_FILTER|'"${PREFIX_FILTER}|g" | \
   sed 's|$fileName|'"${fileName}|g" | \
   sed 's|$filePath|'"${filePath}|g" \
-  > tempFiles/$(echo $fileName | cut -f 1 -d '.').yml
+  > tempFiles/$fileName.yml
   done
 
 }
@@ -132,15 +132,17 @@ upload_ssm_documents(){
     for file in $(echo $FILE_LIST | jq '.[]');
     do
 
-      if [ $DEBUG == True ]; then echo "File: $file"; fi
+      if [ $DEBUG == True ]; then echo "File Pre-process: $file"; fi
 
       filePath=${file%\"}
       filePath=${filePath#\"}
-      filePath=$(echo $filePath | cut -f 1 -d '.')
 
       file=${filePath##*/}
+
+      filePath=$(echo $filePath | cut -f 1 -d '.')
       filePath=$(echo $filePath | tr / -)
 
+      if [ $DEBUG == True ]; then echo "File Post-process: $file"; fi
       if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath"; fi
 
       aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath" \
