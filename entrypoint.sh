@@ -134,7 +134,8 @@ upload_ssm_documents(){
 
       if [ $DEBUG == True ]; then echo "File: $file"; fi
 
-      filePath=$(echo $file | tr / -) # the path to the document with the / replaced with -
+      # the path to the document with the / replaced with -
+      filePath=$(echo $file | tr / -) 
 
       file=${file##*/}
       file=${file%\"}
@@ -143,7 +144,7 @@ upload_ssm_documents(){
 
       if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath-$file"; fi
 
-      if [ $DEBUG == True ]; then echo "File Path: $filePath-$file"; fi
+      if [ $DEBUG == True ]; then echo "File Path: $filePath"; fi
 
       aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
       --document-type "Command" \
