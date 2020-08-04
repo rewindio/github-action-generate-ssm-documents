@@ -134,23 +134,32 @@ upload_ssm_documents(){
 
       if [ $DEBUG == True ]; then echo "File: $file"; fi
 
-      # the path to the document with the / replaced with -
-      filePath=$(echo $file | tr / -) 
+      filePath=$(echo $file | tr / -) # the path to the document with the / replaced with -
 
       file=${file##*/}
       file=${file%\"}
       file=${file#\"}
       file=$(echo $file | cut -f 1 -d '.')
 
-      if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath-$file"; fi
-
       if [ $DEBUG == True ]; then echo "File Path: $filePath"; fi
+
+      if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath-$file"; fi
 
       aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
       --document-type "Command" \
       --profile ${PROFILE_NAME} \
       --region ${region} \
       --document-format YAML
+
+      # if the document already exists update it
+      if [ $? -eq 255 ]
+      then
+        aws ssm update-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
+        --profile ${PROFILE_NAME} \
+        --region ${region} \
+        --document-version '$LATEST' \
+        --document-format YAML
+      fi
 
     done
   done
