@@ -79,29 +79,26 @@ create_ssm_documents(){
   for file in $(echo $FILE_LIST | jq '.[]');
   do
 
-    # extract file name from path and extension
-    fileName=${file##*/}
-    fileName=${fileName%\"}
-    fileName=${fileName#\"} # the name of the file. Used when calling the file from ssm document
+  # extract file name from path and extension
+  fileName=${file##*/}
+  fileName=${fileName%\"}
+  fileName=${fileName#\"} # the name of the file. Used when calling the file from ssm document
 
-    filePath=$(dirname $file)
-    filePath=${filePath%\"}
-    filePath=${filePath#\"} # the path to the document
+  filePath=$(dirname $file)
+  filePath=${filePath%\"}
+  filePath=${filePath#\"} # the path to the document
 
-    # make the dir for each file
-    mkdir tempFiles/$filePath
+  if [ $DEBUG == True ]; then echo "File Name: $fileName"; fi
+  if [ $DEBUG == True ]; then echo "File path: $filePath"; fi
+  if [ $DEBUG == True ]; then echo "Full Path: $filePath/$fileName"; fi
 
-    if [ $DEBUG == True ]; then echo "File Name: $fileName"; fi
-    if [ $DEBUG == True ]; then echo "File path: $filePath"; fi
-    if [ $DEBUG == True ]; then echo "Full Path: $filePath/$fileName"; fi
-
-    # create the ssm document for each file given
-    cat base_doc.yml | sed 's|$REPO_OWNER|'"${REPO_OWNER}|g" | \
-    sed 's|$REPO_NAME|'"${REPO_NAME}|g" | \
-    sed 's|$PREFIX_FILTER|'"${PREFIX_FILTER}|g" | \
-    sed 's|$fileName|'"${fileName}|g" | \
-    sed 's|$filePath|'"${filePath}|g" \
-    > tempFiles/$(echo $filePath/$fileName | cut -f 1 -d '.').yml
+  # create the ssm document for each file given
+  cat base_doc.yml | sed 's|$REPO_OWNER|'"${REPO_OWNER}|g" | \
+  sed 's|$REPO_NAME|'"${REPO_NAME}|g" | \
+  sed 's|$PREFIX_FILTER|'"${PREFIX_FILTER}|g" | \
+  sed 's|$fileName|'"${fileName}|g" | \
+  sed 's|$filePath|'"${filePath}|g" \
+  > tempFiles/$(echo $fileName | cut -f 1 -d '.').yml
   done
 
 }
@@ -142,7 +139,7 @@ upload_ssm_documents(){
       filePath=$(echo $filePath | tr / -)
       if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath-$file"; fi
 
-      aws ssm create-document --content file://tempFiles/$filePath/$fileName.yml --name "$filePath-$file" \
+      aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
       --document-type "Command" \
       --profile ${PROFILE_NAME} \
       --region ${region} \
