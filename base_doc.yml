@@ -38,11 +38,13 @@
     name: "runShellScript"
     inputs:
       runCommand:
-      - if [[ "$fileName" == *".rails."* ]]
-      - then
-      - "cd /var/app/current; sudo rails r $fileName {{parameters}}"
-      - else
-      - "./$fileName {{parameters}}"
-      - fi
+        - 'cp $fileName /lib'
+        - if [[ "$fileName" == *".rails."* ]]
+        - then
+        -   sudo -i bash -c 'cd /var/app/current && rails r /lib/$fileName {{ parameters }}'
+        - else
+        -   sudo -i bash -c '/lib/$fileName {{ parameters }}'
+        - fi
+        - sudo -i bash -c 'rm /lib/$fileName'
       workingDirectory: "{{ workingDirectory }}"
       timeoutSeconds: "{{ executionTimeout }}"
