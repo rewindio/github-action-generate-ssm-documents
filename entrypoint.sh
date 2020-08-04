@@ -131,6 +131,8 @@ upload_ssm_documents(){
 
     for file in $(echo $FILE_LIST | jq '.[]');
     do
+
+      if [ $DEBUG == True ]; then echo "File: $file"; fi
       file=${file##*/}
       file=${file%\"}
       file=${file#\"}
@@ -138,6 +140,8 @@ upload_ssm_documents(){
 
       filePath=$(echo $filePath | tr / -)
       if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath-$file"; fi
+
+      if [ $DEBUG == True ]; then echo "File Path: $filePath-$file"; fi
 
       aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
       --document-type "Command" \
