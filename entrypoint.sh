@@ -152,16 +152,6 @@ upload_ssm_documents(){
       --region ${region} \
       --document-format YAML
 
-      # if the document already exists update it
-      if [ $? -eq 255 ]
-      then
-        aws ssm update-document --content file://tempFiles/$file.yml --name "$filePath-$file" \
-        --profile ${PROFILE_NAME} \
-        --region ${region} \
-        --document-version '$LATEST' \
-        --document-format YAML
-      fi
-
     done
   done
 
