@@ -7,13 +7,23 @@ TEXT_COLOUR_GREEN="\e[38;5;2m"
 TEXT_COLOUR_ORANGE="\e[38;5;202m"
 TEXT_COLOUR_CLEAR="\033[0m"
 
-if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-  echo "AWS_ACCESS_KEY_ID is not set. Quitting."
+if [ -z "$AWS_ACCESS_KEY_ID_PROD" ]; then
+  echo "AWS_ACCESS_KEY_ID_PROD is not set. Quitting."
   exit 1
 fi
 
-if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-  echo "AWS_SECRET_ACCESS_KEY is not set. Quitting."
+if [ -z "$AWS_SECRET_ACCESS_KEY_PROD" ]; then
+  echo "AWS_SECRET_ACCESS_KEY_PROD is not set. Quitting."
+  exit 1
+fi
+
+if [ -z "$AWS_ACCESS_KEY_ID_STAGING" ]; then
+  echo "AWS_ACCESS_KEY_ID_STAGING is not set. Quitting."
+  exit 1
+fi
+
+if [ -z "$AWS_SECRET_ACCESS_KEY_STAGING" ]; then
+  echo "AWS_SECRET_ACCESS_KEY_STAGING is not set. Quitting."
   exit 1
 fi
 
@@ -28,8 +38,12 @@ if [ -z "$REPO_OWNER" ]; then
 fi
 
 # Default to us-east-1 if PUBLISH_REGIONS not set.
-if [ -z "$PUBLISH_REGIONS" ]; then
-  PUBLISH_REGIONS="us-east-1"
+if [ -z "$PUBLISH_REGIONS_PROD" ]; then
+  PUBLISH_REGIONS_PROD="us-east-1"
+fi
+
+if [ -z "$PUBLISH_REGIONS_STAGING" ]; then
+  PUBLISH_REGIONS_STAGING="us-east-1"
 fi
 
 if [ -z "$DEBUG" ]; then
@@ -69,14 +83,14 @@ create_ssm_documents(){
   FOLDER=tempFiles
   if test -d "$FOLDER"; 
   then
-      if [ $DEBUG == True ]; then echo "\n$FOLDER exists"; fi
+      if [ $DEBUG == True ]; then printf "\n%s exists" "$FOLDER"; fi
       echo ""
   else
       mkdir tempFiles # create dir for temp files
-      if [ $DEBUG == True ]; then echo "\nMaking $FOLDER"; fi
+      if [ $DEBUG == True ]; then printf "\nMaking %s" "$FOLDER"; fi
   fi
 
-  for file in $(echo $FILE_LIST | jq '.[]');
+  for file in $(echo "$FILE_LIST" | jq '.[]');
   do
 
   # extract file name from path and extension
@@ -84,7 +98,7 @@ create_ssm_documents(){
   fileName=${fileName%\"}
   fileName=${fileName#\"} # the name of the file. Used when calling the file from ssm document
 
-  filePath=$(dirname $file)
+  filePath=$(dirname "$file")
   filePath=${filePath%\"}
   filePath=${filePath#\"} # the path to the document
 
@@ -109,9 +123,9 @@ create_aws_profile(){
 PROFILE_NAME=ssm-create-document
 
 aws configure --profile ${PROFILE_NAME} <<-EOF > /dev/null 2>&1
-${AWS_ACCESS_KEY_ID}
-${AWS_SECRET_ACCESS_KEY}
 $1
+$2
+$3
 text
 EOF
 }
@@ -119,17 +133,17 @@ EOF
 # upload the created file to each region specified
 upload_ssm_documents(){
   # seperate the given regions by the comma
-  REGION_ARRAY=($(echo $PUBLISH_REGIONS | tr "," "\n")) 
+  REGION_ARRAY=("$(echo "$3" | tr "," "\n")") 
   if [ $DEBUG == True ]; then echo "Region Array: $REGION_ARRAY"; fi
 
-  for region in ${REGION_ARRAY[@]}
+  for region in "${REGION_ARRAY[@]}"
   do
 
-    create_aws_profile $region
+    create_aws_profile "$1" "$2" "$region"
 
     if [ $DEBUG == True ]; then echo "Region: $region"; fi
 
-    for file in $(echo $FILE_LIST | jq '.[]');
+    for file in $(echo "$FILE_LIST" | jq '.[]');
     do
 
       if [ $DEBUG == True ]; then echo "File Pre-process: $file"; fi
@@ -139,8 +153,8 @@ upload_ssm_documents(){
 
       file=${filePath##*/}
 
-      filePath=$(echo $filePath | cut -f 1 -d '.')
-      filePath=$(echo $filePath | tr / -)
+      filePath=$(echo "$filePath" | cut -f 1 -d '.')
+      filePath=$(echo "$filePath" | tr / -)
 
       if [ $DEBUG == True ]; then echo "File Post-process: $file"; fi
       if [ $DEBUG == True ]; then echo "SSM Document Name: $filePath"; fi
@@ -148,7 +162,7 @@ upload_ssm_documents(){
       aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath" \
       --document-type "Command" \
       --profile ${PROFILE_NAME} \
-      --region ${region} \
+      --region "${region}" \
       --document-format YAML
 
       # if the document already exists update it
@@ -156,8 +170,8 @@ upload_ssm_documents(){
       then
         aws ssm update-document --content file://tempFiles/$file.yml --name "$filePath" \
         --profile ${PROFILE_NAME} \
-        --region ${region} \
-        --document-version '$LATEST' \
+        --region "${region}" \
+        --document-version "$LATEST" \
         --document-format YAML
       fi
 
@@ -173,37 +187,40 @@ remove_temp_files(){
 
 # check if filtering is on and apply filter if needed
 check_filter(){
-  if [ $DEBUG == True ]; then echo "\nAll files:\n $FILE_LIST"; fi
+  if [ $DEBUG == True ]; then printf "\nAll files:\n %s" "$FILE_LIST"; fi
   if [ $filtering != False ]
   then
     if [ $DEBUG == True ]; then echo "Filter is filtering to: $PREFIX_FILTER"; fi
     NEW_LIST="["
-    for file in $(echo $FILE_LIST | jq '.[]');
+    for file in $(echo "$FILE_LIST" | jq '.[]');
     do
-      if [ "$(echo ${file#\"} | cut -f1 -d"/")" == "$PREFIX_FILTER" ]
+      if [ "$(echo "${file#\"}" | cut -f1 -d"/")" == "$PREFIX_FILTER" ]
       then 
         NEW_LIST="$NEW_LIST$file,"
       fi
     done
     # overwrite the file list with the filtered version
     FILE_LIST="${NEW_LIST::${#NEW_LIST}-1}]"
-    if [ $DEBUG == True ]; then echo "Filtered Files:\n $FILE_LIST"; fi
+    if [ $DEBUG == True ]; then printf "Filtered Files:\n %s" "$FILE_LIST"; fi
   fi
 
 }
 
 printf "Creating AWS profile..."
 create_aws_profile
-printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Filtering Files..."
 check_filter
-printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Creating ssm documents..."
 create_ssm_documents
-printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
-printf "Uploading ssm documents to ssm document manager..."
-upload_ssm_documents
-printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
+printf "Uploading staging ssm documents to ssm document manager..."
+upload_ssm_documents "$AWS_ACCESS_KEY_ID_STAGING" "$AWS_SECRET_ACCESS_KEY_PROD_STAGING" "$PUBLISH_REGIONS_STAGING"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
+printf "Uploading production ssm documents to ssm document manager..."
+upload_ssm_documents "$AWS_ACCESS_KEY_ID_PROD" "$AWS_SECRET_ACCESS_KEY_PROD" "$PUBLISH_REGIONS_PROD"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Removing temp files..."
 remove_temp_files
-printf "${TEXT_COLOUR_GREEN}[DONE]\n${TEXT_COLOUR_CLEAR}"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
