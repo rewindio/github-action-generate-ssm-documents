@@ -38,12 +38,12 @@ if [ -z "$REPO_OWNER" ]; then
 fi
 
 # Default to us-east-1 if PUBLISH_REGIONS not set.
-if [ -z "$PUBLISH_REGIONS_PROD" ]; then
+if [ -z "$PUBLISH_AWS_REGION_PROD" ]; then
   PUBLISH_REGIONS_PROD="us-east-1"
 fi
 
-if [ -z "$PUBLISH_REGIONS_STAGING" ]; then
-  PUBLISH_REGIONS_STAGING="us-east-1"
+if [ -z "$PUBLISH_AWS_REGION_STAGING" ]; then
+  PUBLISH_AWS_REGION_STAGING="us-east-1"
 fi
 
 if [ -z "$DEBUG" ]; then
@@ -213,10 +213,10 @@ printf "Creating ssm documents..."
 create_ssm_documents
 printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Uploading staging ssm documents to ssm document manager..."
-upload_ssm_documents "$AWS_ACCESS_KEY_ID_STAGING" "$AWS_SECRET_ACCESS_KEY_PROD_STAGING" "$PUBLISH_REGIONS_STAGING"
+upload_ssm_documents "$AWS_ACCESS_KEY_ID_STAGING" "$AWS_SECRET_ACCESS_KEY_PROD_STAGING" "$PUBLISH_AWS_REGION_STAGING"
 printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Uploading production ssm documents to ssm document manager..."
-upload_ssm_documents "$AWS_ACCESS_KEY_ID_PROD" "$AWS_SECRET_ACCESS_KEY_PROD" "$PUBLISH_REGIONS_PROD"
+upload_ssm_documents "$AWS_ACCESS_KEY_ID_PROD" "$AWS_SECRET_ACCESS_KEY_PROD" "$PUBLISH_AWS_REGION_PROD"
 printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Removing temp files..."
 remove_temp_files
