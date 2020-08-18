@@ -171,7 +171,7 @@ upload_ssm_documents(){
         aws ssm update-document --content file://tempFiles/$file.yml --name "$filePath" \
         --profile ${PROFILE_NAME} \
         --region "${region}" \
-        --document-version "$LATEST" \
+        --document-version '$LATEST' \
         --document-format YAML
       fi
 
