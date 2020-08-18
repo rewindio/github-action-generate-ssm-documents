@@ -133,8 +133,8 @@ EOF
 # upload the created file to each region specified
 upload_ssm_documents(){
   # seperate the given regions by the comma
-  REGION_ARRAY=("$(echo "$3" | tr "," "\n")") 
-  if [ $DEBUG == True ]; then echo "Region Array: ${#REGION_ARRAY[@]}"; fi
+  REGION_ARRAY=($(echo "$3" | tr "," "\n")) 
+  if [ $DEBUG == True ]; then printf "Region Array: %s" "${REGION_ARRAY[@]}"; fi
 
   for region in "${REGION_ARRAY[@]}"
   do
@@ -206,9 +206,6 @@ check_filter(){
 
 }
 
-printf "Creating AWS profile..."
-create_aws_profile
-printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Filtering Files..."
 check_filter
 printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
