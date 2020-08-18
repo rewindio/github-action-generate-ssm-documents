@@ -134,7 +134,7 @@ EOF
 upload_ssm_documents(){
   # seperate the given regions by the comma
   REGION_ARRAY=("$(echo "$3" | tr "," "\n")") 
-  if [ $DEBUG == True ]; then echo "Region Array: $REGION_ARRAY"; fi
+  if [ $DEBUG == True ]; then echo "Region Array: ${#REGION_ARRAY[@]}"; fi
 
   for region in "${REGION_ARRAY[@]}"
   do
