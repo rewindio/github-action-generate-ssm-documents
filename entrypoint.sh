@@ -7,23 +7,13 @@ TEXT_COLOUR_GREEN="\e[38;5;2m"
 TEXT_COLOUR_ORANGE="\e[38;5;202m"
 TEXT_COLOUR_CLEAR="\033[0m"
 
-if [ -z "$AWS_ACCESS_KEY_ID_PROD" ]; then
-  echo "AWS_ACCESS_KEY_ID_PROD is not set. Quitting."
+if [ -z "$AWS_ACCESS_KEY_ID" ]; then
+  echo "AWS_ACCESS_KEY_ID is not set. Quitting."
   exit 1
 fi
 
-if [ -z "$AWS_SECRET_ACCESS_KEY_PROD" ]; then
-  echo "AWS_SECRET_ACCESS_KEY_PROD is not set. Quitting."
-  exit 1
-fi
-
-if [ -z "$AWS_ACCESS_KEY_ID_STAGING" ]; then
-  echo "AWS_ACCESS_KEY_ID_STAGING is not set. Quitting."
-  exit 1
-fi
-
-if [ -z "$AWS_SECRET_ACCESS_KEY_STAGING" ]; then
-  echo "AWS_SECRET_ACCESS_KEY_STAGING is not set. Quitting."
+if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+  echo "AWS_SECRET_ACCESS_KEY is not set. Quitting."
   exit 1
 fi
 
@@ -38,12 +28,9 @@ if [ -z "$REPO_OWNER" ]; then
 fi
 
 # Default to us-east-1 if PUBLISH_REGIONS not set.
-if [ -z "$PUBLISH_AWS_REGION_PROD" ]; then
-  PUBLISH_AWS_REGION_PROD="us-east-1"
-fi
 
-if [ -z "$PUBLISH_AWS_REGION_STAGING" ]; then
-  PUBLISH_AWS_REGION_STAGING="us-east-1"
+if [ -z "$PUBLISH_REGIONS" ]; then
+  PUBLISH_REGIONS="us-east-1"
 fi
 
 if [ -z "$DEBUG" ]; then
@@ -123,9 +110,9 @@ create_aws_profile(){
 PROFILE_NAME="ssm-create-document-$3"
 
 aws configure --profile "${PROFILE_NAME}" <<-EOF > /dev/null 2>&1
+${AWS_ACCESS_KEY_ID}
+${AWS_SECRET_ACCESS_KEY}
 $1
-$2
-$3
 text
 EOF
 }
@@ -133,13 +120,14 @@ EOF
 # upload the created file to each region specified
 upload_ssm_documents(){
   # seperate the given regions by the comma
-  REGION_ARRAY=($(echo "$3" | tr "," "\n")) 
-  if [ $DEBUG == True ]; then printf "Region Array: %s" "${REGION_ARRAY[@]}"; fi
 
-  for region in "${REGION_ARRAY[@]}"
+  REGION_ARRAY=($(echo $PUBLISH_REGIONS | tr "," "\n")) 
+  if [ $DEBUG == True ]; then echo "Region Array: $REGION_ARRAY"; fi
+
+  for region in ${REGION_ARRAY[@]}
   do
 
-    create_aws_profile "$1" "$2" "$region"
+    create_aws_profile "$region"
 
     if [ $DEBUG == True ]; then echo "Region: $region"; fi
 
@@ -161,7 +149,7 @@ upload_ssm_documents(){
 
       aws ssm create-document --content file://tempFiles/$file.yml --name "$filePath" \
       --document-type "Command" \
-      --profile ${PROFILE_NAME} \
+      --profile "${PROFILE_NAME}" \
       --region "${region}" \
       --document-format YAML
 
@@ -169,7 +157,7 @@ upload_ssm_documents(){
       if [ $? -eq 255 ]
       then
         aws ssm update-document --content file://tempFiles/$file.yml --name "$filePath" \
-        --profile ${PROFILE_NAME} \
+        --profile "${PROFILE_NAME}" \
         --region "${region}" \
         --document-version '$LATEST' \
         --document-format YAML
@@ -206,11 +194,23 @@ check_filter(){
 
 }
 
+printf "Creating AWS profile..."
+create_aws_profile
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Filtering Files..."
 check_filter
 printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Creating ssm documents..."
 create_ssm_documents
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
+printf "Uploading staging ssm documents to ssm document manager..."
+upload_ssm_documents "$AWS_ACCESS_KEY_ID_STAGING" "$AWS_SECRET_ACCESS_KEY_STAGING" "$PUBLISH_AWS_REGION_STAGING"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
+printf "Uploading production ssm documents to ssm document manager..."
+upload_ssm_documents "$AWS_ACCESS_KEY_ID_PROD" "$AWS_SECRET_ACCESS_KEY_PROD" "$PUBLISH_AWS_REGION_PROD"
+printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
+printf "Removing temp files..."
+remove_temp_files
 printf "%b[DONE]\n%b" "${TEXT_COLOUR_GREEN}" "${TEXT_COLOUR_CLEAR}"
 printf "Uploading staging ssm documents to ssm document manager..."
 upload_ssm_documents "$AWS_ACCESS_KEY_ID_STAGING" "$AWS_SECRET_ACCESS_KEY_STAGING" "$PUBLISH_AWS_REGION_STAGING"
