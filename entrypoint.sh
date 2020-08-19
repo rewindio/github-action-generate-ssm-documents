@@ -125,7 +125,7 @@ PROFILE_NAME=ssm-create-document
 aws configure --profile ${PROFILE_NAME} <<-EOF > /dev/null 2>&1
 $1
 $2
-\n
+$3
 text
 EOF
 }
