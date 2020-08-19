@@ -120,9 +120,9 @@ create_ssm_documents(){
 create_aws_profile(){
 # Create a dedicated profile for this action to avoid conflicts
 # with past/future actions.
-PROFILE_NAME=ssm-create-document
+PROFILE_NAME="ssm-create-document-$3"
 
-aws configure --profile ${PROFILE_NAME} <<-EOF > /dev/null 2>&1
+aws configure --profile "${PROFILE_NAME}" <<-EOF > /dev/null 2>&1
 $1
 $2
 $3
