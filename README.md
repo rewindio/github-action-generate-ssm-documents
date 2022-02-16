@@ -61,6 +61,26 @@ jobs:
         REPO_OWNER: owner
 ```
 
+## Release Management
+
+You may skip this section unless you are working on developing this project's action yourself.
+
+### Version Numbering
+
+We follow [SemVer](https://semver.org/) as closely as possible. Please read up on it to pick the right next version number.
+
+### Tagging the build
+
+We tag from the default branch (currently known as `main`) and use the GitHub Actions "tag" workflow to do the actual tagging and pushing.
+
+1. Navigate to this project's "Actions" tab and click the "tag" workflow.
+2. On the right hand side, click "Run Workflow" below the "Filter workflow runs" search bar.
+3. Keep the default `Use workflow from`, type the default branch name (`main`) as the branch to tag, and use the appropriate SemVer (`vX.Y.Z`) as detailed above.
+4. Click "Run Workflow" and wait for it to complete.
+
+This will add a new tag to the project for usage by downstream clients.
+
+We do not currently use abbreviated versions (e.g. `v3`) for security and simplicity reasons. This means each downstream project will need to opt-in to the changes manually.
 ## License
 
 This project is distributed under the [MIT license](LICENSE.md).
