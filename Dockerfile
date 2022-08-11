@@ -1,4 +1,4 @@
-FROM ruby:2.6.9-alpine3.15
+FROM ruby:2-alpine3.15
 
 RUN apk add --no-cache jq bash build-base nodejs python3 py3-pip imagemagick
 
